@@ -17,6 +17,7 @@
 
 volatile int first_algorithm_count;
 volatile int tttt;
+volatile int isOpen;
 
 void init_uart(uint16_t baudrate){
     
@@ -46,7 +47,40 @@ void uart_puts(char *s){
     }
 }
 
-int edge(int dataArray[], int func, int out[], int count, int length){
+int get_voltage(){
+    
+    int i;
+    ADCSRA |= (1 << ADEN);          // Enable ADC
+    
+   
+    ADCSRA |= (1 << ADSC);          // start ADC measurement
+    while (ADCSRA & (1 << ADSC) );
+    
+    i = ADCH;
+   
+    ADCSRA &= ~(1 << ADEN);       //Disable ADC
+    return i;
+}
+
+void ADC_enable(){
+    
+    ADMUX =            //Attiny85 Datasheet page 134
+    (1 << ADLAR) |     //Left shifts the result, for one byte
+    (0 << REFS0) |     //Referance to input voltage values
+    (0 << REFS1) |
+    
+    (0 << MUX3)  |     //use ADC0 for input (PB4), MUX bit 3
+    (0 << MUX2)  |     //use ADC0 for input (PB4), MUX bit 2
+    (0 << MUX1)  |     //use ADC0 for input (PB4), MUX bit 1
+    (0 << MUX0);       //use ADC0 for input (PB4), MUX bit 0
+    
+    ADCSRA =           //Attiny85 Datasheet page 136
+    (1 << ADPS2) |     //set prescaler to 64, bit 2
+    (1 << ADPS1) |     //set prescaler to 64, bit 1
+    (1 << ADPS0);      //set prescaler to 64, bit 0
+}
+
+int edge(int dataArray[], int func, int out[], int count, int length,int volt){
   int i, j, k,t;
   int fir,sec,sum;
   count=0;
@@ -58,7 +92,7 @@ int edge(int dataArray[], int func, int out[], int count, int length){
     else
       count = 0;
 
-    if(count >= 10)
+    if(count >= 10 && volt > 145)
       return 1;
   }
   return 0;
@@ -146,15 +180,71 @@ void red(int no){
     }
 }
 
+void pwm ()
+{
+    if(isOpen == 0)
+    {
+        int i = 0;
+        while(i < 125)
+        {
+            PORTD |= _BV(PORTD5);
+            _delay_ms(0.5);
+            PORTD &= ~_BV(PORTD5);
+             _delay_ms(1.5);
+             i++;
+        }
+        isOpen = 1;
+    }
+    else if(isOpen == 1)
+    {
+        int i = 0;
+        while(i < 125)
+        {
+            PORTD |= _BV(PORTD5);
+            _delay_ms(1.5);
+            PORTD &= ~_BV(PORTD5);
+            _delay_ms(0.5);
+            i++;
+        }
+        isOpen = 0;
+    }
+}
+
+void pwm1 ()
+{
+    int i = 0;
+    while(i < 25)
+    {
+        PORTD |= _BV(PORTD5);//Kapalı haraketi 0.5 1.5
+        _delay_ms(1.5);
+        PORTD &= ~_BV(PORTD5);
+        _delay_ms(0.5);
+        i++;
+    }
+}
+
 void open_the_door(int result){
     if(result == 1)
     {
         PORTB |= _BV(PORTB2);
         PORTB &= ~_BV(PORTB3);
+        
+        PORTD &= ~_BV(PORTD2);//Buzzer
         _delay_ms(500);
+        PORTD |= _BV(PORTD2);//Buzzer
+        pwm();
+        //pwm1();
     }
     else
     {
+        PORTD &= ~_BV(PORTD2);//Buzzer
+        _delay_ms(15);
+        PORTD |= _BV(PORTD2);//Buzzer
+        _delay_ms(45);
+        PORTD &= ~_BV(PORTD2);//Buzzer
+        _delay_ms(15);
+        PORTD |= _BV(PORTD2);//Buzzer
+        
         PORTB &= ~_BV(PORTB4);
         _delay_ms(500);
     }
@@ -168,20 +258,37 @@ ISR(PCINT2_vect)
     first_algorithm_count++;
 }
 
+
+
 int main(void){
+    char buffer[2];
+
+  int volt = 0;
   int open_signal_second_algorithm = 0;
   int result_of_first = 0;
   int count = 0;
   int infinite_loop = 1;
+  //int secondGo[20]={0};
   int secondGo[20]={0};
+  //int edgeArray_second[19] = {0};
   int edgeArray_second[19] = {0};
+    isOpen = 1;
 
+    ADC_enable();
+    
     DDRB |= _BV(DDB5);
+    DDRD |= _BV(DDD2);
+    DDRD |= _BV(DDD5);    
+    
+    PORTB |= _BV(PORTB5);
+    PORTD |= _BV(PORTD2);//Buzzer
+    PORTD &= ~_BV(PORTD5);
 
-  setup_sleep();
-
-  while (infinite_loop == 1)
+    setup_sleep();
+    
+    while (infinite_loop == 1)
   {
+      
     PORTB &= ~_BV(PORTB0);
     PORTB &= ~_BV(PORTB1);
     PORTB &= ~_BV(PORTB2);
@@ -195,6 +302,12 @@ int main(void){
 
     if(result_of_first == 1)
     {
+        PORTD &= ~_BV(PORTD2);//Buzzer
+        _delay_ms(15);
+        PORTD |= _BV(PORTD2);//Buzzer
+        
+        volt = get_voltage();
+        
         PORTB |= _BV(PORTB3);
         PORTB |= _BV(PORTB4);
         
@@ -206,11 +319,13 @@ int main(void){
             first_algorithm_count=0;
             secondGo[i] = go_second();
         }
+        
         count=0;
 
-        open_signal_second_algorithm = edge(secondGo, 0, edgeArray_second, count, 19);
-
+        open_signal_second_algorithm = edge(secondGo, 0, edgeArray_second, count, 29, volt);
+        //pwm1();
         open_the_door(open_signal_second_algorithm);
+
     }
   }
   return 0;
