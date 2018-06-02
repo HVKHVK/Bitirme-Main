@@ -231,21 +231,21 @@ void wait_till_close(){
     int angle=0;
     while (turn == 1){
         angle = get_angle();
-        if(angle < 175){
+        if(angle < 173){
             turn = 0;
         }
     }
     turn = 1;
     while (turn == 1){
         angle = get_angle();
-        if(angle > 175){
+        if(angle > 173){
             turn = 0;
         }
     }
     _delay_ms(500);
     pwm(0);
     angle=get_angle();
-    if(angle < 175){
+    if(angle < 173){
         pwm(1);
         PORTD &= ~_BV(PORTD2);//Buzzer
         _delay_ms(2000);
@@ -287,7 +287,7 @@ ISR(PCINT2_vect)
 }
 
 int main(void){
-//	char buffer[2]; //Uart - Test Code
+	//char buffer[2]; //Uart - Test Code
 	int volt = 0;
     int angle=0;
     int open_signal_second_algorithm = 0;
@@ -297,7 +297,7 @@ int main(void){
     int secondGo[20]={0};
     int edgeArray_second[19] = {0};
     int door_cont = 0;
- // init_uart(57600); //Uart init - Test Code
+  //init_uart(57600); //Uart init - Test Code
 
     ADC_enable();
 
@@ -317,7 +317,11 @@ int main(void){
     	PORTB &= ~_BV(PORTB2);
       
     	go_sleep();
-
+      /*  angle=get_angle();//Delete
+        
+        itoa(angle, buffer, 10); //Uart - Test Code
+        uart_puts(buffer); //Uart - Test Code
+*/
     	PORTB |= _BV(PORTB0);
       
     	first_algorithm_count = 0;
@@ -343,8 +347,8 @@ int main(void){
         
         	angle=get_angle();
         
-   //   	  itoa(angle, buffer, 10); //Uart - Test Code
-   //   	  uart_puts(buffer); //Uart - Test Code
+      	 // itoa(angle, buffer, 10); //Uart - Test Code
+      	 // uart_puts(buffer); //Uart - Test Code
         
         	count=0;
 
