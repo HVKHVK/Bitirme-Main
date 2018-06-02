@@ -231,21 +231,21 @@ void wait_till_close(){
     int angle=0;
     while (turn == 1){
         angle = get_angle();
-        if(angle < 20){
+        if(angle < 175){
             turn = 0;
         }
     }
     turn = 1;
     while (turn == 1){
         angle = get_angle();
-        if(angle > 20){
+        if(angle > 175){
             turn = 0;
         }
     }
     _delay_ms(500);
     pwm(0);
     angle=get_angle();
-    if(angle < 20){
+    if(angle < 175){
         pwm(1);
         PORTD &= ~_BV(PORTD2);//Buzzer
         _delay_ms(2000);
@@ -261,7 +261,7 @@ int open_the_door(int result){
             
             PORTD &= ~_BV(PORTD2);
             _delay_ms(500);
-            PORTD |= _BV(PORTD2);/
+            PORTD |= _BV(PORTD2);
             pwm(1);
             return 1;
         }
@@ -343,8 +343,8 @@ int main(void){
         
         	angle=get_angle();
         
-      	//  itoa(angle, buffer, 10); //Uart - Test Code
-      	//  uart_puts(buffer); //Uart - Test Code
+   //   	  itoa(angle, buffer, 10); //Uart - Test Code
+   //   	  uart_puts(buffer); //Uart - Test Code
         
         	count=0;
 
