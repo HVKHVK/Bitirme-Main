@@ -297,11 +297,12 @@ int main(void){
     int secondGo[20]={0};
     int edgeArray_second[19] = {0};
     int door_cont = 0;
-  //init_uart(57600); //Uart init - Test Code
 
-    ADC_enable();
+  	//init_uart(57600); //Uart init - Test Code
 
-    DDRB |= _BV(DDB5);
+    ADC_enable(); // Eneble ADC
+
+    DDRB |= _BV(DDB5); // Bus set-ups
     DDRD |= _BV(DDD2);
     DDRD |= _BV(DDD5);    
     
@@ -309,30 +310,26 @@ int main(void){
     PORTD |= _BV(PORTD2);
     PORTD &= ~_BV(PORTD5);
 
-    setup_sleep();
+    setup_sleep(); //Enable Sleep
     
-    while (infinite_loop == 1){
-    	PORTB &= ~_BV(PORTB0);
+    while (infinite_loop == 1){ // Main loop
+    	PORTB &= ~_BV(PORTB0);// Port Set-ups
     	PORTB &= ~_BV(PORTB1);
     	PORTB &= ~_BV(PORTB2);
       
-    	go_sleep();
-      /*  angle=get_angle();//Delete
-        
-        itoa(angle, buffer, 10); //Uart - Test Code
-        uart_puts(buffer); //Uart - Test Code
-*/
+    	go_sleep(); // Sleep while nothing
+
     	PORTB |= _BV(PORTB0);
       
     	first_algorithm_count = 0;
-    	result_of_first = go_first();
+    	result_of_first = go_first(); //Primary algortihm check
 
     	if(result_of_first == 1){
         	PORTD &= ~_BV(PORTD2);
         	_delay_ms(15);
         	PORTD |= _BV(PORTD2);
         
-        	volt = get_voltage();
+        	volt = get_voltage();//Secondary algotihm voltage check
         
         	PORTB |= _BV(PORTB3);
         	PORTB |= _BV(PORTB4);
@@ -342,13 +339,13 @@ int main(void){
         	int i = 0;
         	for(i=0; i<20 ;i++){
             	first_algorithm_count=0;
-            	secondGo[i] = go_second();
+            	secondGo[i] = go_second();//Seconday algotihm 
         	}
         
-        	angle=get_angle();
+        	angle=get_angle();//Door positon
         
-      	 // itoa(angle, buffer, 10); //Uart - Test Code
-      	 // uart_puts(buffer); //Uart - Test Code
+      	 	// itoa(angle, buffer, 10); //Uart - Test Code
+      		// uart_puts(buffer); //Uart - Test Code
         
         	count=0;
 
@@ -356,7 +353,7 @@ int main(void){
         
         	int door = 0;
         	if(angle > 22){
-          	door = open_the_door(open_signal_second_algorithm);
+          	door = open_the_door(open_signal_second_algorithm); //Door checks
         	}
         
         	PORTB &= ~_BV(PORTB3);
@@ -364,7 +361,7 @@ int main(void){
         	_delay_ms(300);
         
         	if (door == 1){
-         	wait_till_close();
+         	wait_till_close(); //CLose code
         	}
     	}
   	}
